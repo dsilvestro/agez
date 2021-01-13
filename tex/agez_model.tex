@@ -152,14 +152,39 @@ The exact age of each zircon ($z_i$) is assumed to be unknown but linked to its 
 The mean ages $\mu$ and a standard deviations $\sigma$ of all zircons represent the input data of the model.
 Since the age of zircons can be measured based on different methods (e.g. $m \in \{1, \dots, M \}$, e.g. Zr-U-Pb, ZFT, Ar-Ar), the true age of a zircon is assumed to be further affected by the how it was measured. We compute the likelihood of the age of a zircon $i$ based on dating method $m$ as:
 \begin{equation}
-P(\mu_i | z_i, \sigma_i, \eta_m, \epsilon_m) \sim \mathcal{N}(z_i + \eta_m, \sigma_i + \epsilon_m)   
+P(\mu_i | z_i, \sigma_i, \epsilon_m) \sim \mathcal{N}(z_i, \sigma_i + \epsilon_m)   
 \end{equation}
-where $\eta_m \in \mathbb{R}$ is the age bias associated with the measurement method $m$ and $\epsilon_m \in \mathbb{R^+}$ is the biased in the estimated error of the measurement method $m$.
+where 
+%$\eta_m \in \mathbb{R}$ is the age bias associated with the measurement method $m$ and
+ $\epsilon_m \in \mathbb{R^+}$ is the bias in the estimated error of the measurement method $m$.
 The parameters  $z_i, \eta_m$ and $\epsilon_m$ are considered as unknown and estimated from the data using a Bayesian algorithm.
-The prior probability of $z_{i,j}$ is modeled by a Cauchy distribution with mode equal to the age of the sample $x_j$ and a sample-specific scale $s_j$:
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=120mm]{figs/ZirconAge.pdf}
+\caption{Example of three zircons with estimated ages of 10, 14, and 17 Ma ($\mu$; indicated by the dashed vertical lines) and standard deviations ($\sigma + \epsilon$; shown by the gray shaded areas). The sampled true ages are indicated by the red circles. }
+\label{f_zir_age}
+\end{figure}
+
+
+The prior probability of $z_{i,j}$, i.e. the $i$th zircon in sample $j$ is modeled by a half-Uniform-Cauchy distribution, which we define as
 \begin{equation}
-P(z_{i,j} | x_j, s_j) \sim \mathcal{C}(x_j, s_j).
+P(z_{i,j} | x_j, s_j) = \left\{
+\begin{array}{@{}ll@{}}
+    z_{i,j} \sim \mathcal{U}(0, 2x_j)}, & \text{if}\      z_{i,j} < x_j \\
+    z_{i,j} \sim \mathcal{C}(x_j, s_j), & \text{if}\      z_{i,j} \geq x_j \\
+\end{array}\right.
 \end{equation}
+where $x_j$ is the estimated age of the sample and $s_j$ is a sample-specific scale parameter of the Causchy distribution. 
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=120mm]{figs/SampleProb.pdf}
+\caption{Example of three zircons with estimated ages of 10, 14, and 17 Ma ($\mu$; indicated by the dashed vertical lines) and standard deviations ($\sigma + \epsilon$; shown by the gray shaded areas). The sampled true ages are indicated by the red circles. }
+\label{f_sample_prob}
+\end{figure}
+
+
 The value of $x_j$, the sample age, is determined by two latent variables and constrained by sampled values of $\mathbf{z}$ such that $x_{i} > x_{i - 1}$ for $i \in \{2, \dots, S\}$.
 Specifically we define as 
 \begin{equation}

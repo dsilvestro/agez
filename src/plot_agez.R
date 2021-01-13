@@ -22,10 +22,9 @@ plot_data <-function(m, s, indx=c(1:10), xlim=c(9, 20), save_pdf=FALSE){
 		Ys = Ys - min(Ys)
 		Ys = Ys / max(Ys)
 		lines(vec, Ys)
-		segments(m[i],0,m[i],1, col="gray50",lty=2) # mean
+		polygon(c(min(vec), vec, max(vec)), c(0,Ys,0), col="#d9d9d9",border = NA) 
+		segments(m[i],0,m[i],1, col="black",lty=2) # mean
 		points(m[i]+rnorm(1,0,s[i]), 0, col="#e41a1c",pch=16) # mean
-		
-		
 	}
 	if (save_pdf != ""){
 		dev.off()
