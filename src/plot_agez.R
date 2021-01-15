@@ -10,30 +10,33 @@ set.seed(4321)
 # tbl = read.csv(f)
 
 # PLOT ZIRCON RAW DATA AND ESTIMATED AGE
-plot_data <-function(m, s, indx=c(1:10), xlim=c(9, 20), save_pdf=FALSE){
-	if (save_pdf != ""){
+plot_data <-function(m, s, z, indx=c(1:10), xlim=c(9, 20), save_pdf=FALSE){
+	if (save_pdf){
 		pdf(file="/Users/dsilvestro/Software/agez/tex/figs/ZirconAge.pdf", 6.5, 4.5)
 	}
 	plot(NA, xlim=xlim, ylim=c(0,1), xlab="Ma", ylab="Relative density",
 	     main="", las=1) # Sampled zircon ages
+	r_vec = m - z
 	for (i in indx){
-		vec = seq(m[i]-2*s[i], m[i]+2*s[i], length.out=100)
-		Ys = dnorm(vec, m[i], s[i])
+		r = r_vec[i]
+		vec = seq(z[i]-(3*s[i]), z[i]+(3*s[i]), length.out=100)
+		Ys = dnorm(vec, z[i], s[i])
 		Ys = Ys - min(Ys)
 		Ys = Ys / max(Ys)
 		lines(vec, Ys)
 		polygon(c(min(vec), vec, max(vec)), c(0,Ys,0), col="#d9d9d9",border = NA) 
 		segments(m[i],0,m[i],1, col="black",lty=2) # mean
-		points(m[i]+rnorm(1,0,s[i]), 0, col="#e41a1c",pch=16) # mean
+		points(z[i], 0, col="#e41a1c",pch=16) # true mean
+		points(m[i], 0, col="black",pch=17) # data
 	}
-	if (save_pdf != ""){
+	if (save_pdf){
 		dev.off()
 	}
 	
 }
 
 # plot_data(tbl$Age, tbl$Error.2s, indx=c(1, 10, 1000)) #, xlim=c(0,100))
-plot_data(c(10, 14, 17), c(0.2, 0.4, 1), indx=c(1, 2,3), save_pdf=T) #, xlim=c(0,100))
+plot_data(c(10, 14, 17), c(0.2, 0.4, 1), z=c(10.2, 13.6, 17.9), indx=c(1, 2,3), save_pdf=T) #, xlim=c(0,100))
 
 
 
