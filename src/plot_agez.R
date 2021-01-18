@@ -49,7 +49,7 @@ plot_sample <- function(samples,xlim=c(0,20), UniCau=FALSE, p_error=0.1, save_pd
 	     main="", yaxt='n') # "Estimated sample ages
 	axis(2, labels= c(0:length(samples)-1), at=c(0:length(samples)-1), lty=, col=, las=1)
 		 
-	maxY = dcauchy(0,0,1)
+	maxY = dcauchy(0,0,1.2)
 	
 	
 	for (i in 1:length(samples)){
@@ -118,6 +118,6 @@ sample_4$I = c(0, 1, 1)
 
 samples=list(sample_1, sample_2, sample_3, sample_4)
 
-plot_sample(samples, xlim=c(7.5,25), UniCau=F, p_error=0.1)
+# plot_sample(samples, xlim=c(7.5,25), UniCau=F, p_error=0.1)
 
 plot_sample(samples, xlim=c(7.5,25), UniCau=T, p_error=0.1, save_pdf=TRUE)
