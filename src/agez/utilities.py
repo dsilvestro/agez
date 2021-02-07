@@ -16,8 +16,8 @@ def update_uniform(i, d=0.1, n=1, Mb=100, mb= -100):
     Ix = np.random.randint(0, i.shape,n) # faster than np.random.choice
     z = np.zeros(i.shape) + i
     z[Ix] = z[Ix] + np.random.uniform(-d, d, n)
-    z[z > Mb] = Mb- (z[z>Mb]-Mb)
-    z[z < mb] = mb- (z[z<mb]-mb)
+    z[z > Mb] = Mb - (z[z>Mb] - Mb)
+    z[z < mb] = mb + (mb - z[z<mb])
     return z
 
 
@@ -26,8 +26,8 @@ def update_uniform2D(i, d=0.1, n=1, Mb=100, mb= -100):
     Iy = np.random.randint(0, i.shape[1],n)
     z = np.zeros(i.shape) + i
     z[Ix,Iy] = z[Ix,Iy] + np.random.uniform(-d[Ix,Iy], d[Ix,Iy], n)
-    z[z > Mb] = Mb- (z[z>Mb]-Mb)
-    z[z < mb] = mb- (z[z<mb]-mb)
+    z[z > Mb] = Mb - (z[z>Mb] - Mb)
+    z[z < mb] = mb + (mb - z[z<mb])
     hastings = 0
     return z, (Ix, Iy), hastings
 
