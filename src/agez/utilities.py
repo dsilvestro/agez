@@ -5,6 +5,11 @@ from scipy import ndimage
 np.set_printoptions(suppress=True, precision=3)
 
 
+def choose(lst, p):
+    # faster version of np.choose()
+    return lst[np.searchsorted(np.cumsum(p),np.random.random())]
+
+
 def unique_unsorted(a_tmp):
     a = copy.deepcopy(a_tmp)
     indx = np.sort(np.unique(a, return_index=True)[1])
