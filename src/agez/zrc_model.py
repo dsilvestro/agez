@@ -193,8 +193,9 @@ class AgezSampler:
         self.updates = []
         self.counter = 0
         self._accepted_moves = list()
-        # update frequency of indicators
-        p_ind_update = 1 / self._zrc_model_prime.data._m
+        # update frequency of indicators |-> is datingMethod=='constrain' no error is allowed
+        p_ind_update = 1 / self._zrc_model_prime.data._m * (zrc_model.data._datingMethod != 'constrain')
+
         self.p_ind_update = p_ind_update / np.sum(p_ind_update)
 
     def reset_prime_state(self):
@@ -236,7 +237,7 @@ class AgezSampler:
         hastings = 0
         rr = np.random.choice(np.arange(len(self._update_f)), p=self._update_f,size=1)
         if 0 in rr:
-            "update z"
+            "update z: NOTE that if data._s == 0, then the zircon age will not be updated"
             update = np.random.normal(0, self._zrc_model.data._s*0.5, self._zrc_model.data._n_zircons) \
                      * np.random.binomial(1, size=self._zrc_model.data._n_zircons,p=0.01)
             self._zrc_model_prime._z = np.abs(self._zrc_model_prime._z + update)
