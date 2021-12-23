@@ -76,6 +76,10 @@ class ZirconModel:
         self._x = np.ones(self._n_samples) * self._x0
 
         self._max_age_boundary = np.max(self.data._m) * 1.1
+        self._dating_methods = utilities.unique_unsorted(self.data._datingMethod)
+        # fix epsilon value for max_age data:
+        self._epsilon[self._dating_methods == 'max_age'] = 0.1
+
 
     # Latent parameters
     def update_x(self):
@@ -194,7 +198,7 @@ class AgezSampler:
         self.counter = 0
         self._accepted_moves = list()
         # update frequency of indicators |-> is datingMethod=='constrain' no error is allowed
-        p_ind_update = 1 / self._zrc_model_prime.data._m * (zrc_model.data._datingMethod != 'constrain')
+        p_ind_update = 1 / self._zrc_model_prime.data._m * (zrc_model.data._datingMethod != 'max_age')
 
         self.p_ind_update = p_ind_update / np.sum(p_ind_update)
 
@@ -274,7 +278,9 @@ class AgezSampler:
         if 4 in rr:
             "update method biases"
             #self._zrc_model_prime._eta = utilities.update_uniform(self._zrc_model_prime._eta,d=0.25)
-            self._zrc_model_prime._epsilon, h = utilities.multiplier_proposal_vector(self._zrc_model_prime._epsilon,d=1.1)
+            ind = self._zrc_model._dating_methods != 'max_age'
+            tmp, h = utilities.multiplier_proposal_vector(self._zrc_model_prime._epsilon[ind],d=1.1)
+            self._zrc_model_prime._epsilon[ind] = tmp
             hastings += h
 
         self.updates = rr

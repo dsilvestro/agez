@@ -24,7 +24,7 @@ zrc_data = zr.ZirconData(sampleID=tbl['Sample Label'],
 zrc_model = zr.ZirconModel(zrc_data)
 zrc_sampler = zr.AgezSampler(zrc_model)
 
-zrc_logger = zr.AgezLogger(filename="run%sT01" % rseed)
+zrc_logger = zr.AgezLogger(filename="agez%s" % rseed)
 
 # run MCMC
 zr.runMCMC(zrc_sampler,
