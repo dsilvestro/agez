@@ -151,7 +151,7 @@ The samples are ordered according on their depth and we assume their age strictl
 We indicate the set of zircons found in a sample $s$ as $\mathbf{z}^s$.
 
 The exact age of each zircon ($z_i$) is assumed to be unknown but linked to its measured age, which is expressed as a mean $\mu_i$ and a standard deviation $\sigma_i$.
-The mean ages $\mu$ and a standard deviations $\sigma$ of all zircons represent the input data of the model, which aims to estimate the vector $\mathbf{z}$ and the ages of all samples $mathbf{x}$
+The mean ages $\mu$ and a standard deviations $\sigma$ of all zircons represent the input data of the model, which aims to estimate the vector $\mathbf{z}$ and the ages of all samples $\mathbf{x}$. 
 Since the age of zircons can be measured based on different methods (e.g. $m \in \{1, \dots, M \}$, e.g. Zr-U-Pb, ZFT, Ar-Ar), the uncertainty around the true age of a zircon is assumed to be further affected by how it was measured. We compute the likelihood of the age of a zircon $i$ based on a normal density (Fig. \ref{f_zir_age}):
 \begin{equation}
 P(\mu_i | z_i, \sigma_i, \epsilon_m) \sim \mathcal{N}(z_i, \sigma_i + \epsilon_m)   
@@ -164,12 +164,12 @@ The parameters  $z_i$ and $\epsilon_m$ are considered as unknown and estimated f
 \begin{figure}[h!]
 \centering
 \includegraphics[width=120mm]{figs/ZirconAge.pdf}
-\caption{Example of three zircons with measure ages of 10, 14, and 17 Ma ($\mu$; indicated by the dashed vertical lines and black triangles) and standard deviations ($\sigma + \epsilon$; shown by the gray shaded areas). The sampled true ages of the zircons are indicated by the red circles. }
+\caption{Example of three zircons with measured ages of 10, 14, and 17 Ma ($\mu$; indicated by the dashed vertical lines and black triangles) and standard deviations ($\sigma + \epsilon$; shown by the gray shaded areas). The sampled true ages of the zircons are indicated by the red circles. }
 \label{f_zir_age}
 \end{figure}
 
 
-The value of $x_j$, the age of the $j$th sample, is determined by two latent variables ($r_j$ and $\mathbf{I}^j$) and constrained by sampled values of $\mathbf{z}$ such that $x_{i} > x_{i - 1}$ for $i \in \{2, \dots, S\}$.
+The value of $x_j$, the age of the $j^{\text{th}}$ sample, is determined by two latent variables ($r_j$ and $\mathbf{I}^j$) and constrained by the sampled values of $\mathbf{z}$ such that $x_{i} > x_{i - 1}$ for $i \in \{2, \dots, S\}$.
 Specifically, we define as 
 \begin{equation}
 \zeta_j = \min(\mathbf{z}^{s}), \text{ for } s \in \{j, \dots, S\},
@@ -183,19 +183,20 @@ x_j = \left\{
     r_j (\zeta_j), & \text{if}\ j = 1 \\
     x_{j - 1} + r_j (\zeta_j - x_{j - 1}), & \text{if}\ j > 1 \\
 \end{array}\right.
+\label{x_constraint}
 \end{equation}
 where $r_j \in (0, 1)$ is an estimated sample-specific latent parameter determining how close $x_{j}$ is to its lower boundary $x_{j - 1}$ (or to 0 if $j = 1$). 
 Thus, when $r_j \approx 0$ the age of the sample is close to its younger boundary and when $r_j \approx 1$ the age of the sample is close to its older boundary. 
 %
 We also account for the fact that a zircon can be younger than the sample it was found in, for instance due to a dating error or a later recrystallization of the zircon. 
-To account for this possibility, we additionally estimate a vector of identifiers $\mathbf{I} = \{I_1, \dots, I_N\}$ that define which zircons (identified by $I = 1$) are older than the sample and there fore used to determine  its upper age boundary  and which zircons (identified by $I = 0$) are younger than the age of the sample. 
+To account for this possibility, we additionally estimate a vector of identifiers $\mathbf{I} = \{I_1, \dots, I_N\}$ that define which zircons (identified by $I = 1$) are older than the sample and therefore used to determine  its upper age boundary  and which zircons (identified by $I = 0$) are younger than the age of the sample. 
 Thus, the upper boundary of a sample age is:
 \begin{equation}
 \zeta_j = \min(\mathbf{z}^{s} \backslash \mathbf{I}^s_0), \text{ for } s \in \{j, \dots, N \}, 
 \end{equation}
 where $\mathbf{z}^{s} \backslash \mathbf{I}^s_0$ indicates the subset of zircons in sample $s$ with indicator equal to 1. 
 
-We can now define the prior probability of $z_i^j$, i.e. the $i$th zircon in sample $j$ as a function of the age of the sample ($x_j$) and an estimated scale parameter $s_j$. 
+We can now define the prior probability of $z_i^j$, i.e. the $i^{\text{th}}$ zircon in sample $j$ as a function of the age of the sample ($x_j$) and an estimated scale parameter $s_j$. 
 Specifically we model the prior distribution of zircons in a sample using a compound-Uniform-Cauchy distribution, defined as:
 \begin{equation}
 P(z_{i,j} | x_j, s_j) = \left\{
@@ -227,6 +228,21 @@ Finally we use a Bernoulli distribution as prior on the indicators $\{I_1, \dots
 \subsubsection{Parameter estimation}
 The model includes $2N + 2M + 2S + 3$ parameters ($z$ and $I$, $\epsilon$, $s$ and $r$, $a$ and $b$ and $\beta$, respectively). 
 All parameters are estimated through Metropolis-Hastings Markov chain Monte Carlo (MCMC). We use a sliding window proposal with reflection at the boundaries for $r$, normal kernel proposals for $z$, binomial proposals for $I$. We use multiplier proposals on all other parameters since they only span the positive range. 
+
+
+\subsubsection{Adding a maximum age constraint}
+\textcolor{blue}{ADDED on 21.12.2021\\}
+A maximum age constraint can be added to the age model by including an additional sample with a single age measures with no dating error. This artificial sample $x^{S+1}$ will therefore include a single measured age of fixed age and with 
+
+\begin{equation}
+x_j = \left\{
+\begin{array}{@{}ll@{}}
+    r_j (\zeta_j), & \text{if}\ j = 1 \\
+    x_{j - 1} + r_j (\zeta_j - x_{j - 1}), & \text{if}\ j > 1 \\
+\end{array}\right.
+\end{equation}
+
+
 
 \clearpage
 \subsection{Results}
