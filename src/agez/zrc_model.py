@@ -48,13 +48,8 @@ class ZirconModel:
     def __init__(self, zrc_data):
         self.data = copy.deepcopy(zrc_data)
         self._n_samples = zrc_data._n_samples
-        # indicators (0: wrong zircon, 1: correct)
-        self._I = np.ones(len(zrc_data._m))
-        # z: estimated true age of zircons (abs avoid negative)
-        self._z = np.abs(np.random.normal(zrc_data._m, zrc_data._s*0.1, zrc_data._n_zircons))
-        # d: initialize offset per sample in [0,1] so that x = min_z * d
-        self._r = np.random.uniform(0.9, 1, self._n_samples)
-        
+        # init parameters
+        self.init_Irz()
         # init dating method bias
         self._eta = np.zeros(self.data._n_dating_methods)
         self._epsilon = np.random.exponential(0.5, self.data._n_dating_methods)
@@ -78,9 +73,46 @@ class ZirconModel:
         self._max_age_boundary = np.max(self.data._m) * 1.1
         self._dating_methods = utilities.unique_unsorted(self.data._datingMethod)
         # fix epsilon value for max_age data:
-        self._epsilon[self._dating_methods == 'max_age'] = 0.1
+        self._epsilon[self._dating_methods == 'fixed_age'] = 0.1
 
+    def init_Irz(self):
+        # indicators (0: wrong zircon, 1: correct)
+        self._I = np.ones(len(self.data._m))
+        # set indicator incompatible with fixed ages to 0
+        self.min_ages = np.zeros(len(self.data._m))
+        for i in range(len(self.data._m)):
+            if self.data._datingMethod[i] == 'fixed_age':
+                if self.data._m[i] > self.min_ages[i-1]:
+                    self.min_ages[i:] =  self.data._m[i] + 0
+            
+            tmp_I = self._I[i:] + 0
+            tmp_m = self.data._m[i:] + 0
+            tmp_I[tmp_m < self.min_ages[i-1]] = 0 # label as incorrect
+            self._I[i:] = tmp_I
+        self._fixed_I = self._I + 0
 
+        # z: estimated true age of zircons (abs avoid negative)
+        rr = np.random.normal(0, self.data._s*0.1, self.data._n_zircons)
+        self._z = np.abs(self.data._m + rr)
+        # fix ages of unconformities and 'fixed_age' layers
+        self._fixed_zr_ind = np.where(self.data._datingMethod == 'fixed_age')[0]
+        self._z[self._fixed_zr_ind] = self.data._m[self._fixed_zr_ind]
+        # fix other ages to be older than min ages
+        ind = self._z < self.min_ages
+        self._z[ind] = self.data._m[ind] + np.abs(rr[ind])
+
+        # r: initialize offset per sample in [0,1] so that x = min_z * r
+        dating_method_per_sample = np.zeros(self._n_samples).astype(str)
+        for i in range(self._n_samples):
+            tmp = self.data._datingMethod[self.data._sampleIDnum == i]
+            dating_method_per_sample[i] = tmp[0]
+        
+        self._fixed_sample_ind = np.where(dating_method_per_sample == 'fixed_age')[0]
+        self._r = np.random.uniform(0.9, 1, self._n_samples)
+        self._r[self._fixed_sample_ind] = 1 - small_number
+        
+        
+        
     # Latent parameters
     def update_x(self):
         tmp = self.min_z()
@@ -197,8 +229,10 @@ class AgezSampler:
         self.updates = []
         self.counter = 0
         self._accepted_moves = list()
-        # update frequency of indicators |-> is datingMethod=='constrain' no error is allowed
-        p_ind_update = 1 / self._zrc_model_prime.data._m * (zrc_model.data._datingMethod != 'max_age')
+        # update frequency of indicators |-> is datingMethod=='fixed_age' no error is allowed
+        p_ind_update = 1 / self._zrc_model_prime.data._m * (zrc_model.data._datingMethod != 'fixed_age')
+        # # for zircons incompatible with samples with incompatible 'fixed_age' I = 0 and can't be changed
+        # p_ind_update = p_ind_update * self._zrc_model._fixed_I
 
         self.p_ind_update = p_ind_update / np.sum(p_ind_update)
 
@@ -209,9 +243,6 @@ class AgezSampler:
             self._zrc_model_prime._r = self._zrc_model._r + 0
             self._zrc_model_prime._G_alpha = self._zrc_model._G_alpha
             self._zrc_model_prime._G_beta = self._zrc_model._G_beta
-
-        if 2 in self.updates:
-            self._zrc_model_prime._I = self._zrc_model._I + 0
         if 3 in self.updates:
             self._zrc_model_prime._b_alpha = self._zrc_model._b_alpha + 0
             self._zrc_model_prime._b_beta = self._zrc_model._b_beta + 0
@@ -219,6 +250,8 @@ class AgezSampler:
         if 4 in self.updates:
             self._zrc_model_prime._eta = self._zrc_model._eta + 0
             self._zrc_model_prime._epsilon = self._zrc_model._epsilon + 0
+        # I is (potentially) always updated
+        self._zrc_model_prime._I = self._zrc_model._I + 0
 
     def reset_accepted_state(self):
         if 0 in self.updates:
@@ -227,8 +260,6 @@ class AgezSampler:
             self._zrc_model._r = self._zrc_model_prime._r + 0
             self._zrc_model._G_alpha = self._zrc_model_prime._G_alpha
             self._zrc_model._G_beta = self._zrc_model_prime._G_beta
-        if 2 in self.updates:
-            self._zrc_model._I = self._zrc_model_prime._I + 0
         if 3 in self.updates:
             self._zrc_model._b_alpha = self._zrc_model_prime._b_alpha + 0
             self._zrc_model._b_beta = self._zrc_model_prime._b_beta + 0
@@ -236,6 +267,8 @@ class AgezSampler:
         if 4 in self.updates:
             self._zrc_model._eta = self._zrc_model_prime._eta + 0
             self._zrc_model._epsilon = self._zrc_model_prime._epsilon + 0
+        # I is (potentially) always updated
+        self._zrc_model._I = self._zrc_model_prime._I + 0
 
     def mh_step(self):
         hastings = 0
@@ -245,6 +278,13 @@ class AgezSampler:
             update = np.random.normal(0, self._zrc_model.data._s*0.5, self._zrc_model.data._n_zircons) \
                      * np.random.binomial(1, size=self._zrc_model.data._n_zircons,p=0.01)
             self._zrc_model_prime._z = np.abs(self._zrc_model_prime._z + update)
+
+            # "fix other ages to be older than min ages by setting their indicator to 0"
+            # ind = self._zrc_model_prime._z < self._zrc_model.min_ages
+            # self._zrc_model_prime._I[ind] = 0
+            # diff = np.abs(self._zrc_model.min_ages[ind] - self._zrc_model_prime._z[ind])
+            # self._zrc_model_prime._z[ind] = self._zrc_model.min_ages[ind] + diff
+
             # self._zrc_model_prime.update_x()
             # print(self._zrc_model_prime.calc_likelihood, self._likelihood)
             # print(self._zrc_model_prime.calc_prior + self._zrc_model_prime.calc_hyperpriors, self._prior)
@@ -252,7 +292,7 @@ class AgezSampler:
             "update r"
             self._zrc_model_prime._r = utilities.update_uniform(self._zrc_model_prime._r,
                                                                 d=0.1, Mb=1, mb=0, n=5)
-            # self._zrc_model_prime.update_x()
+            self._zrc_model_prime._r[self._zrc_model._fixed_sample_ind] = 1-small_number # reset fixed_age samples
             "update G_rate"
             if self._zrc_model.estimate_truncation:
                 self._zrc_model_prime._G_alpha, h = utilities.multiplier_proposal(self._zrc_model_prime._G_alpha,d=1.05)
@@ -264,6 +304,7 @@ class AgezSampler:
             "update I"
             indx = np.random.choice(range(self._zrc_model_prime.data._n_zircons), 1,  p=self.p_ind_update)
             self._zrc_model_prime._I[indx] = np.abs(1 - self._zrc_model_prime._I[indx])
+            # self._zrc_model_prime._I = self._zrc_model_prime._I * self._zrc_model._fixed_I # reset incompatible samples
 
         if 3 in rr:
             "update b_rate"
@@ -278,13 +319,18 @@ class AgezSampler:
         if 4 in rr:
             "update method biases"
             #self._zrc_model_prime._eta = utilities.update_uniform(self._zrc_model_prime._eta,d=0.25)
-            ind = self._zrc_model._dating_methods != 'max_age'
+            ind = self._zrc_model._dating_methods != 'fixed_age'
             tmp, h = utilities.multiplier_proposal_vector(self._zrc_model_prime._epsilon[ind],d=1.1)
             self._zrc_model_prime._epsilon[ind] = tmp
             hastings += h
 
+        "fix ages that are younger than min constraints by setting their indicator to 0"
+        ind = self._zrc_model_prime._z < self._zrc_model.min_ages
+        self._zrc_model_prime._I[ind] = 0
+
         self.updates = rr
 
+    
         # acceptance condition
         lik = self._zrc_model_prime.calc_likelihood
         prior = self._zrc_model_prime.calc_prior + self._zrc_model_prime.calc_hyperpriors
