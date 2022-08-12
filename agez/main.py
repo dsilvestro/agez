@@ -155,38 +155,38 @@ class ZirconAgeSampler():
 
 
 
-
-
-
-tb = pd.read_csv("../Tatacoa Geochron data data.csv")
-# sort table by stratigraphic position: first item is the most recent (largest strat position)
-tbl = tb.sort_values(by=['Stratigraphic position'], ascending=False)
-
-zrc_data = ZirconData(sampleID=tbl['Sample Label'],
-                      zirconID=tbl['Zircon number'],
-                      stratLevel=tbl['Stratigraphic level'],
-                      stratPosition=tbl['Stratigraphic position'],
-                      datingMethod=tbl['Method'],
-                      age_est=tbl['Age'],
-                      age_std=tbl['Error 2s'])
-
-zrc_model = ZirconModel(zrc_data)
-
-zrc_data._sampleIDnum
-
-print(len(zrc_model.min_z))
-print(zrc_model.min_z)
-
-zrc_model.get_x
-
-
-zrc_sampler = ZirconAgeSampler(zrc_model)
-
-
-# a = np.array([1,2,2,3,3,3,4,4,4,2,2,2])
-# b = np.random.choice(range(5),a.shape)
-# ndimage.minimum(a, labels=b, index=unique_unsorted(b))
-
+run =0
+if run:
+    
+    tb = pd.read_csv("../Tatacoa Geochron data data.csv")
+    # sort table by stratigraphic position: first item is the most recent (largest strat position)
+    tbl = tb.sort_values(by=['Stratigraphic position'], ascending=False)
+    
+    zrc_data = ZirconData(sampleID=tbl['Sample Label'],
+                          zirconID=tbl['Zircon number'],
+                          stratLevel=tbl['Stratigraphic level'],
+                          stratPosition=tbl['Stratigraphic position'],
+                          datingMethod=tbl['Method'],
+                          age_est=tbl['Age'],
+                          age_std=tbl['Error 2s'])
+    
+    zrc_model = ZirconModel(zrc_data)
+    
+    zrc_data._sampleIDnum
+    
+    print(len(zrc_model.min_z))
+    print(zrc_model.min_z)
+    
+    zrc_model.get_x
+    
+    
+    zrc_sampler = ZirconAgeSampler(zrc_model)
+    
+    
+    # a = np.array([1,2,2,3,3,3,4,4,4,2,2,2])
+    # b = np.random.choice(range(5),a.shape)
+    # ndimage.minimum(a, labels=b, index=unique_unsorted(b))
+    
 
 
 
