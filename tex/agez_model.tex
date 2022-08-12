@@ -231,7 +231,6 @@ All parameters are estimated through Metropolis-Hastings Markov chain Monte Carl
 
 
 \subsubsection{Adding a maximum age constraint}
-\textcolor{blue}{ADDED on 21.12.2021\\}
 A maximum age constraint can be added to the age model by including an additional sample with a single age measures with no dating error. This artificial sample will therefore include a single measured age of fixed age $\mu^{S+1}$ and standard deviation $\sigma^{S+1} = 0$ to enforce a hard boundary. 
 This artificial sample is assigned a fixed indicator $I^{S+1} = 1$ and its true age is set equal to the measured one $x^{S+1} = \mu^{S+1}$. 
 This approach enforces a maximum age constraint to the estimated ages of all following samples. 
